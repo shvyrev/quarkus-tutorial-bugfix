@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
-//@ActivateRequestContext
+@ActivateRequestContext
 @Path("/hello")
 public class ExampleResource {
 
@@ -89,11 +89,9 @@ public class ExampleResource {
                         .setDefaultPort(443)
                         .setSsl(true));
         return client.get("/api/people").send()
-                .thenCompose(response -> managedExecutor.supplyAsync(() -> {
+                .thenApplyAsync(response -> {
                     final JsonObject json = response.bodyAsJsonObject();
                     List<Person> persons = new ArrayList<>(json.getInteger("count"));
-                    // Store them in the DB
-                    // Note that we're still in the same transaction as the outer method
                     for (Object element : json.getJsonArray("results")) {
                         Person person = new Person();
                         person.name = ((JsonObject) element).getString("name");
@@ -101,6 +99,6 @@ public class ExampleResource {
                         persons.add(person);
                     }
                     return persons;
-                }));
+                    }, managedExecutor);
     }
 }
